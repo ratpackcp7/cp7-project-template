@@ -17,7 +17,7 @@ usage() {
     echo "  --framework fastapi|flask   (default: fastapi)"
     echo "  --deploy systemd|docker     (default: prompt)"
     echo "  --description \"...\"         (default: name)"
-    echo "  --no-cloudflare / --no-bridge / --dry-run"
+    echo "  --no-cloudflare / --no-bridge / --dry-run / --yes"
     exit 1
 }
 
@@ -25,7 +25,7 @@ usage() {
 
 PROJECT_NAME="$1"; PROJECT_PORT="$2"; shift 2
 FRAMEWORK="fastapi"; DEPLOY=""; DESCRIPTION="$PROJECT_NAME"
-DO_CLOUDFLARE=true; DO_BRIDGE=true; DRY_RUN=false
+DO_CLOUDFLARE=true; DO_BRIDGE=true; DRY_RUN=false; SKIP_CONFIRM=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -35,6 +35,7 @@ while [[ $# -gt 0 ]]; do
         --no-cloudflare) DO_CLOUDFLARE=false; shift ;;
         --no-bridge)   DO_BRIDGE=false; shift ;;
         --dry-run)     DRY_RUN=true; shift ;;
+        --yes|-y)      SKIP_CONFIRM=true; shift ;;
         *) err "Unknown option: $1"; usage ;;
     esac
 done
@@ -53,11 +54,16 @@ TARGET_DIR="${PROJECTS_DIR}/${PROJECT_NAME}"
 
 # Prompt for deploy if not set
 if [[ -z "$DEPLOY" ]]; then
-    echo "Deploy target:  1) systemd  2) docker"
-    read -rp "Choose [1/2]: " choice
-    case "$choice" in
-        1|systemd) DEPLOY="systemd" ;; 2|docker) DEPLOY="docker" ;; *) err "Invalid"; exit 1 ;;
-    esac
+    if $SKIP_CONFIRM; then
+        DEPLOY="systemd"
+        warn "No --deploy specified with --yes, defaulting to systemd"
+    else
+        echo "Deploy target:  1) systemd  2) docker"
+        read -rp "Choose [1/2]: " choice
+        case "$choice" in
+            1|systemd) DEPLOY="systemd" ;; 2|docker) DEPLOY="docker" ;; *) err "Invalid"; exit 1 ;;
+        esac
+    fi
 fi
 
 FRAMEWORK_DISPLAY="FastAPI"; [[ "$FRAMEWORK" == "flask" ]] && FRAMEWORK_DISPLAY="Flask"
@@ -73,8 +79,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 $DRY_RUN && { warn "Dry run — no changes made"; exit 0; }
 
-read -rp "Proceed? [y/N]: " confirm
-[[ "$confirm" =~ ^[Yy]$ ]] || { info "Aborted"; exit 0; }
+if ! $SKIP_CONFIRM; then
+    read -rp "Proceed? [y/N]: " confirm
+    [[ "$confirm" =~ ^[Yy]$ ]] || { info "Aborted"; exit 0; }
+fi
 
 # Step 1: Scaffold
 info "1/8 Scaffolding..."
@@ -109,11 +117,21 @@ ok "Placeholders replaced"
 # Step 3: .env
 info "3/8 Creating .env..."
 [[ -f "${TARGET_DIR}/.env.template" ]] && cp "${TARGET_DIR}/.env.template" "${TARGET_DIR}/.env"
+# Fix HOST for Docker (containers need 0.0.0.0, not 127.0.0.1)
+if [[ "$DEPLOY" == "docker" && -f "${TARGET_DIR}/.env" ]]; then
+    sed -i 's/HOST=127.0.0.1/HOST=0.0.0.0/' "${TARGET_DIR}/.env"
+fi
 ok ".env created"
 
 # Step 4: Data dir
-info "4/8 Creating data/..."
+info "4/8 Creating data/ + setting ACLs..."
 mkdir -p "${TARGET_DIR}/data"
+# Set ACLs so claude-agent can write to the project
+if id claude-agent &>/dev/null; then
+    setfacl -R -m u:claude-agent:rwX "${TARGET_DIR}" 2>/dev/null || true
+    setfacl -R -d -m u:claude-agent:rwX "${TARGET_DIR}" 2>/dev/null || true
+    ok "ACLs set for claude-agent"
+fi
 
 # Step 5: Deps
 if [[ "$DEPLOY" == "systemd" ]]; then
