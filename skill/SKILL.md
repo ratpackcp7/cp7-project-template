@@ -1,6 +1,6 @@
 ---
 name: new-project
-version: 2.1 # 2026-03-21 18:30 CT
+version: 2.1 # 2026-03-21 14:31 CT
 description: >
   Orchestrate the full CP7 project lifecycle from idea to running service.
   Triggers on: "new project", "build something new", "I have an idea",
