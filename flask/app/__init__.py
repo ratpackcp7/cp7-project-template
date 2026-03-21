@@ -26,5 +26,12 @@ def create_app():
     def health():
         return {"status": "ok", "service": "PROJECT_NAME"}
 
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        return response
+
     logger.info("PROJECT_NAME initialized")
     return app
