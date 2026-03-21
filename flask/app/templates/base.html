@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PROJECT_NAME{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e17; --bg-secondary: #111827; --bg-card: #1a2233;
+            --text-primary: #e2e8f0; --text-secondary: #94a3b8;
+            --accent: #f97316; --accent-hover: #ea580c;
+            --border: #1e293b; --success: #22c55e; --danger: #ef4444;
+            --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: "JetBrains Mono", "Fira Code", monospace;
+            --radius: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-body); background: var(--bg-primary); color: var(--text-primary); line-height: 1.7; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        h1, h2, h3 { font-family: var(--font-mono); font-weight: 600; }
+        h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--accent); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; }
+        button, .btn { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: var(--radius); cursor: pointer; font-size: 0.875rem; }
+        button:hover, .btn:hover { background: var(--accent-hover); }
+        input, select, textarea { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); padding: 0.5rem 0.75rem; border-radius: var(--radius); font-size: 0.875rem; width: 100%; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline; }
+    </style>
+</head>
+<body>
+    <h1>PROJECT_NAME</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}
+    <div style="padding:.75rem 1rem;border-radius:var(--radius);margin-bottom:1rem;background:rgba(34,197,94,.15);border:1px solid var(--success);">{{ message }}</div>
+    {% endfor %}{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</body>
+</html>

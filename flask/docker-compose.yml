@@ -1,0 +1,17 @@
+services:
+  PROJECT_NAME:
+    build: .
+    container_name: PROJECT_NAME
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:PROJECT_PORT:PROJECT_PORT"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:PROJECT_PORT/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

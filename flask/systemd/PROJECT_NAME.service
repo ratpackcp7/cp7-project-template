@@ -1,0 +1,20 @@
+[Unit]
+Description=PROJECT_NAME Flask service
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/chris/projects/PROJECT_NAME
+EnvironmentFile=/home/chris/projects/PROJECT_NAME/.env
+ExecStart=/home/chris/projects/PROJECT_NAME/venv/bin/python serve.py
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+
+[Install]
+WantedBy=default.target
